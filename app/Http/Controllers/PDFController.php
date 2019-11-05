@@ -12,57 +12,98 @@ class PDFController extends Controller
     //
     public function index()
     {
-        $user_data = $this->getPaginatedUsers();
-        return view('data-list', compact('user_data'));
+        $payer_data = $this->getPaginatedPayers();
+        return view('data-list', compact('payer_data'));
     }
 
-    public function getPaginatedUsers()
+    public function getPaginatedPayers()
     {
-        return DB::table('users')->paginate(20);
+        return DB::table('tax_payers')->paginate(20);
     }
 
-    public function getUsers()
+    public function getPayers()
     {
-        return DB::table('users')->get();
+        return DB::table('tax_payers')->get();
     }
 
-    /* public function getUsersCount()
+    /* public function getPayersCount()
     {
-        return DB::table('users')->count();
+        return DB::table('Payers')->count();
     } */
 
     public function convertDataToHTML()
     {
-        $user_data = $this->getUsers();
-        $output = '<h1 style="margin-top: 3rem; text-align: center;" >Username list from the database</h1>
+        $payer_data = $this->getPayers();
+        $output = '<h1 style="margin-top: 3rem; text-align: center;" >Payer\'s name list from the database</h1>
                 <table width="100%" style="border-collapse: collapse; border: 2px solid rgb(200, 200, 200); letter-spacing: 1px; font-family: sans-serif; font-size: .8rem;">
                     <thead style="background-color: #3f87a6; color: #fff;" >
                         <tr>
-                            <th style="border: 1px solid rgb(190, 190, 190); padding: 5px 10px;" width="5%">Id</th>
-                            <th style="border: 1px solid rgb(190, 190, 190); padding: 5px 10px;" width="20%">Name</th>
-                            <th style="border: 1px solid rgb(190, 190, 190); padding: 5px 10px;" width="30%">Email address</th>
-                            <th style="border: 1px solid rgb(190, 190, 190); padding: 5px 10px;" width="25%">Time verified</th>
+                            <th>S/N</th>
+                            <th>RIN</th>
+                            <th>Name</th>
+                            <th>Start Month</th>
+                            <th>End Month</th>
+                            <th>Gross</th>
+                            <th>CRA</th>
+                            <th>Pension</th>
+                            <th>NHF</th>
+                            <th>NHIS</th>
+                            <th>Taxfree Pay</th>
+                            <th>CH.  Income</th>
+                            <th>M.  Tax</th>
+                            <th>EXP  .A.Tax</th>
                         </tr>
-                    </thead>';
-        foreach($user_data as $user)
-        {
-            $output .= '<tbody style="background-color: #e4f0f5;" >
-                            <tr>
-                                <td style="border: 1px solid rgb(190, 190, 190); text-align: center; padding: 5px 10px;">'. $user->id .'</td>
-                                <td style="border: 1px solid rgb(190, 190, 190); text-align: center; padding: 5px 10px;">'. $user->name .'</td>
-                                <td style="border: 1px solid rgb(190, 190, 190); text-align: center; padding: 5px 10px;">'. $user->email .'</td>
-                                <td style="border: 1px solid rgb(190, 190, 190); text-align: center; padding: 5px 10px;">'. $user->email_verified_at .'</td>
-                            </tr>
-                        </tbody>';
-        }
+                    </thead><tbody style="background-color: #e4f0f5;" >';
+        
+        /* <td style="border: 1px solid rgb(190, 190, 190); text-align: center; padding: 5px 10px;">'. $payer->id .'</td>
+        <td style="border: 1px solid rgb(190, 190, 190); text-align: center; padding: 5px 10px;">'. $payer->name .'</td>
+        <td style="border: 1px solid rgb(190, 190, 190); text-align: center; padding: 5px 10px;">'. $payer->email .'</td>
+        <td style="border: 1px solid rgb(190, 190, 190); text-align: center; padding: 5px 10px;">'. $payer->email_verified_at .'</td> */
 
-        $output .= '</table>';
+        $i = 0;
+        $total_gross_pay = 0;
+        $total_tax_payable = 0;
+        $total_annual_tax = 0;
+
+        foreach($payer_data as $data)
+        {
+            $output .= '<tr>
+                            <td>' . ++$i . '</td>
+                            <td>' . $data->payer_rin . '</td>		
+                            <td>' . $data->payer_name . '</td>
+                            <td>' . $data->start_month . '</td>
+                            <td>' . $data->end_month . '</td>
+                            <td>' . number_format($data->gross_pay, 2) . '</td>
+                            <td>' . number_format($data->consolidated_relief_allowance, 2) . '</td>
+                            <td>' . number_format($data->pension_contribution_declared, 2) . '</td>
+                            <td>' . number_format($data->nhf_contribution_declared, 2) . '</td>
+                            <td>' . number_format($data->nhis_contribution_declared, 2) . '</td>
+                            <td>' . number_format($data->tax_free_pay, 2) . '</td>
+                            <td>' . number_format($data->chargeable_income, 2) . '</td>
+                            <td>' . number_format($data->tax_payable, 2) . '</td>
+                            <td>' . number_format($data->annual_tax, 2) . '</td>
+                        </tr>';
+
+            $total_gross_pay += $data->gross_pay;
+            $total_tax_payable += $data->tax_payable;
+            $total_annual_tax += $data->annual_tax;
+
+        }
+        $output .= '<tr>
+                        <td colspan="5"><b>TOTAL</b></td>
+                        <td><strong>' . number_format($total_gross_pay, 2) . '</strong></td>
+                        <td colspan="6"></td>		
+                        <td><strong>' . number_format($total_tax_payable, 2) . '</strong></td>		
+                        <td><strong>' . number_format($total_annual_tax, 2) . '</strong></td>
+                    </tr>';
+
+        $output .= '</tbody></table>';
         return $output;
     }
 
     // TODO:
-    // 1. Create the tax payer table
-    // 2. Fill it up with appropriate columns from the tax payer's sheet
+    // 1. Create the tax payer table - done
+    // 2. Fill it up with appropriate columns from the tax payer's sheet - done
     // 3. Generate data for the tax payer table with its factory
     // 4. Parse the data to pdf converter
     // 5. Stream the generated pdf file
@@ -81,6 +122,7 @@ class PDFController extends Controller
         ));
 
         $pdf->binary = 'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe';
+        $pdf->setOptions(array('orientation' => 'landscape'));
         $pdf->addPage($this->convertDataToHTML());
 
         if (!$pdf->send()) {
